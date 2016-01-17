@@ -1,0 +1,50 @@
+<h4>Mô hình quy hoạch nguyên</h4>
+<p>
+    Gọi \(G = \left( V, E \right) \) đồ thị có hướng với \(V\) là tập đỉnh và E là tập cạnh:
+    \[\begin{align}
+    V = S \cup \left\{ s \right\} \cup \left\{ t \right\}
+    \end{align}\]
+    \[\begin{align}
+    E = V \times V
+    \end{align}\]
+    \[\begin{align}
+    S = \{0,1,2,3,..,N-1\}
+    \end{align}\]
+    , với \(S\) là tập đỉnh chứa tất cả các trạm dừng được đánh thứ tự liên tục,
+    \(N\) là tổng số trạm,
+    \(s\) là điểm xuất phát,
+    \(t\) là nơi đến.
+    <br/><br/>
+    Gọi \(x_{(i,j)}\) với \((i,j) \in E \) là tập các biến nhị phân,
+    ta phát biểu <b>các ràng buộc cơ bản của bài toán </b> như sau :
+    \[\begin{align}
+    \sum\limits_{i = 0}^{N-1} {{x_{(i,s)}}}  = 0; \qquad
+    \sum\limits_{j = 0}^{N-1} {{x_{(s,j)}}}  = 1; \\
+    \sum\limits_{i = 0}^{N-1} {{x_{(i,t)}}}  = 1; \qquad
+    \sum\limits_{j = 0}^{N-1} {{x_{(t,j)}}}  = 0; \\
+    \forall i \in S: \; \sum\limits_{j = 0}^{N-1} {{x_{(j,i)}}}  = \sum\limits_{j = 0}^{N-1} {{x_{(i,j)}}}  \le 1; \\
+    \end{align}\]
+
+    <b>Các ràng buộc nâng cao</b>
+    <p>
+        \[ \sum\limits_{\forall (i,j) \in E} { x_{(i,j)} \delta_{(i,j)}  } \leq \alpha \]
+        \[ \forall i \in B: \sum\limits_{j = 0} ^{N-1} { x_{(j,i)} = 0  } \]
+        \[\forall c_{k} \in C, \forall i \in c_{k}: \sum\limits_{j = 0} ^{N-1} { x_{(j,i)} = 0  } \]
+        \[\forall i \in L: \sum\limits_{j = 0} ^{N-1} { x_{(j,i)} \geq 1  } \]
+        \[\forall h_{k} \in H, \forall i \in h_{k}: \sum\limits_{j = 0} ^{N-1} { x_{(j,i)} \geq 1  } \]
+    </p>
+    với <b>hàm mục tiêu là:</b>
+    \[ minimize: \; \sum\limits_{\forall (i,j) \in E} { d_{(i,j)} x_{(i,j)} } \]
+
+    ,trong đó
+    \(d_{(i,j)}\) là ma trận khoảng cách GIS.
+    \[{\delta _{(i,j)}} = \left\{ \begin{array}{l}
+    1 \text{ khi } v_{(i,j)}=4.5\\
+    0 \text{ khi }v_{(i,j)}=40
+    \end{array} \right.\]
+    \(\alpha\) là giới hạn số lần chuyển tuyến.<br/>
+    \(B\) là tập chứa các trạm không được di chuyển qua.<br/>
+    \(C\) là tập chứa các tuyến không được di chuyển qua.<br/>
+    \(L\) là tập chứa các trạm cần phải viếng qua.<br/>
+    \(H\) là tập chứa các tuyến cần phải viếng qua.
+</p>

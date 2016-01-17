@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
+        <link rel="stylesheet" href="lib/bootstrap-slider.css"/>
+        <link rel="stylesheet" href="lib/bootstrap-select.css"/>
+        <link rel="stylesheet" href="lib/leaflet.css"/>
+        <link rel="stylesheet" href="lib/codemirror.css"/>
+        <link rel="stylesheet" href="lib/routing.css"/>
+        <link rel="stylesheet" href="lib/label.css"/>
+
+
+
+        <script src="lib/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+        <script src="lib/bootstrap-slider.js"></script>
+        <script src="lib/bootstrap-select.js"></script>
+        <script src="lib/codemirror.min.js"></script>
+        <script src="lib/leaflet.js"></script>
+        <script src="lib/routing.min.js"></script>
+        <script src="lib/mathprog.js"></script>
+        <script src="lib/geocoder.js"></script>
+        <script src="lib/label.js"></script>
+        <script src="lib/jsapi.js"></script>
+
+
+        <script src='static/Problem.js'></script>
+        <script src='static/Render.js'></script>
+        <script src="static/main.js"></script>
+
+
+        <title>SBRP Demo</title>
+        <style>
+            html, body {
+                height:100%
+            }
+            #map {
+                position: fixed;
+                top: 55px;
+                left: 0;
+                right: 0;
+                bottom: 0;
+            }
+            .CodeMirror {
+                font-size: 12px;
+                font-family: Consolas, Monaco,"Courier New", monospace;
+                line-height: 1.45em;
+                width: 750px;
+                height: 450px;
+                margin: 0px;
+                border: solid 1px;
+            }
+            #mathProgTab { display: none; }
+
+        </style>
+    </head>
+    <body>	
+        <nav role="navigation" class="navbar navbar-default navbar-fixed-top">
+            <div class="container-fluid">
+                <!--Brand and toggle get grouped for better mobile display--> 
+                <div class="navbar-header">
+                    <button type="button" data-target="#navbarCollapse" data-toggle="collapse" class="navbar-toggle">
+                        <span class="sr-only">Chạm để mở</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a href="#" id="solver" class="navbar-brand">Tối ưu lộ trình xe bus</a>
+                </div>
+                <!--Collection of nav links and other content for toggling--> 
+                <div id="navbarCollapse" class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="#" id="leafmap">
+                            <i class="icon-th icon-black"></i> Bản đồ</a></li>
+                        <li><a href="#" id="location"> Thông tin các trạm</a></li>
+                        <li><a href="#" id="route"> Thông tin các tuyến</a></li>
+                        <li><a href="#" id="contraint"> Các ràng buộc nâng cao</a></li>
+                        <li><a href="#" id="optimize"> MathProg</a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                               role="button" aria-haspopup="true" aria-expanded="false" id="fitnessinfo" value="time">
+                                Tối ưu thời gian<span class="caret"/></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#" id="fitness" value="time">Tối ưu thời gian</a></li>
+                                <li><a href="#" id="fitness" value="dist">Tối ưu quảng đường</a></li>
+                                <li><a href="#" id="fitness" value="walk">Tối ưu đi bộ</a></li>
+                            </ul>
+                        </li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                               role="button" aria-haspopup="true" aria-expanded="false" id="data" value="2">
+                                2 tuyến<span class="caret"/></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#" id="sample" value="2">2 tuyến</a></li>
+                                <li><a href="#" id="sample" value="3">3 tuyến</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li><a href="#" id="sample" value="4">4 tuyến</a></li>
+                                <li><a href="#" id="sample" value="5">5 tuyến</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li><a href="#" id="sample" value="6">6 tuyến</a></li>
+                                <li><a href="#" id="sample" value="7">7 tuyến</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li><a href="#"id="sample" value="8">8 tuyến</a></li>
+                                <li><a href="#"id="sample" value="9">9 tuyến</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div id="indicator" style="display:none; text-align: center; padding-top: 80px" class="loading_img">
+            <img src="lib/images/indicator.gif"/>
+        </div>
+        <div id="map"></div>
+        <div id="content" style="margin-top:55px;">
+            <div class="container" style="margin:0px;">
+                <div class="row">
+                    <div class="col-md-14" id="locationTab">
+                        <div id="filterDiv"></div>
+                        <div id="tableDiv"></div>
+                        <div class="col-md-14" id="contraintTab">
+                            <form role="form">
+                                <div class="form-group">
+                                    <input id="r1-enabled" type="checkbox"/>&nbsp&nbsp<label for="r1-enabled">Ràng buộc số lần chuyển tuyến</label>&nbsp&nbsp
+                                    <input type="text" id="r1" data-slider-min="0" data-slider-max="20" data-slider-step="1" data-slider-value="5" disabled="true"/>
+                                </div>
+                                <div class="form-group">
+                                    <input id="r2-enabled" type="checkbox"/>&nbsp&nbsp<label for="r2-enabled">Ràng buộc ngăn cấm di chuyển qua một số trạm</label>&nbsp&nbsp
+                                    <select id="r2" class="selectpicker show-tick" data-live-search="true"  multiple></select>
+                                </div>
+                                <div class="form-group">
+                                    <input id="r3-enabled" type="checkbox"/>&nbsp&nbsp<label for="r3-enabled">Ràng buộc ngăn cấm di chuyển qua một số tuyến</label>&nbsp&nbsp
+                                    <select id="r3" class="selectpicker show-tick" data-live-search="true"  multiple></select>
+                                </div>
+                                <div class="form-group">
+                                    <input id="r4-enabled" type="checkbox"/>&nbsp&nbsp<label for="r4-enabled">Ràng buộc bắt buộc di chuyển qua một số trạm</label>&nbsp&nbsp
+                                    <select id="r4" class="selectpicker show-tick" data-live-search="true"  multiple></select>
+                                </div>
+                                <div class="form-group">
+                                    <input id="r5-enabled" type="checkbox"/>&nbsp&nbsp<label for="r5-enabled">Ràng buộc bắt buộc di chuyển qua một số tuyến</label>&nbsp&nbsp
+                                    <select id="r5" class="selectpicker show-tick" data-live-search="true"  multiple></select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container" style="margin:0px;">
+                <div id="mathProgTab">
+                    <div class="row">
+                        <div class="col-md-8">
+                            MathProg
+                            <textarea id='editor'></textarea>
+                            Log
+                            <pre id='logContent' style="width: 750px; min-height: 120px;"></pre>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="mathModel">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+
+    <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</html>

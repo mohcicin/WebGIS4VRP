@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset='UTF-8'>	    
+		<title></title>  
+		<style>
+        h1 {
+            border-bottom: 3px solid #cc9900;
+            color: #996600;
+            font-size: 30px;
+        }
+        table, th , td {
+            border: 1px solid grey;
+            border-collapse: collapse;
+            padding: 5px;
+        }
+        table tr:nth-child(odd) {
+            background-color: #f1f1f1;
+        }
+        table tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+        </style>    
+        <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js"></script>      
+        <script src="lib/google-maps-3-vs-1-0.js" type="text/javascript"></script>
+        <script type="text/javascript" src="lib/jquery-1.11.0.js"></script>
+		<script type="text/javascript">
+		
+	    $.ajaxSetup({ async: false });
+	
+	    var loc, type, disMatSrv, map, route, srv;
+	    var delay = 100;
+
+	    function initialize() {
+	        $.getJSON('problem.php?json=location', function(data) { loc = data; });
+	        $.getJSON('problem.php?json=type', function(data) { type = data; });
+	        $.getJSON('problem.php?json=service', function(data) { srv = data; });
+	        disMatSrv = new google.maps.DistanceMatrixService();
+
+	        // Hiển thị bản đồ
+	        var mapOptions =
+            {
+                zoom: 13,
+                center: new google.maps.LatLng(loc[0].Lat, loc[0].Lon)
+            };
+	        map = new google.maps.Map
+            (
+                document.getElementById('map'),
+                mapOptions
+            );
+
+	        // Hiển thị vị trí
+	        for (var i = 0; i < loc.length; i++) {
+	            var image = {
+	                url: $(type).filter(function() { return this.ID == loc[i].Type; })[0].Image,
+	                size: new google.maps.Size(64, 64),
+	                scaledSize: new google.maps.Size(32, 32)
+	            };
+	            var maker = new google.maps.Marker({
+	                position: new google.maps.LatLng(loc[i].Lat, loc[i].Lon),
+	                title: loc[i].Name,
+	                icon: image
+	            });
+	            maker.setMap(map);
+	        }
+	        // Hiển thị chú giải
+	        $("body").append("<div id='legend'><h3>Chú giải</h3></div>");
+	        for (var i = 0; i < type.length; i++) {
+	            $("#legend").append("<img src='" + type[i].Image + "'>" + type[i].Name + "</img><br/>");
+	        }
+	        $("#legend").find("img").width(32);
+	        $("#legend").css
+	        ({
+	            "font-family": "Arial, sans-serif",
+	            "background": "#fff",
+	            "padding": "10px",
+	            "margin": "10px",
+	            "border": "3px solid #000"
+	        });
+	        $("#legend h3").css("margin-top", "0");
+	        $("#legend img").css("vertical-align", "middle");
+	        map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push($("#legend").get(0));
+
+	        var arrOrgin = new Array();
+	        var arrDest = new Array(); 
+	        for (var i = 0; i < loc.length; i++) {
+	                arrOrgin[i] = new google.maps.LatLng(loc[i].Lat, loc[i].Lon); 
+	                arrDest[i] = new google.maps.LatLng(loc[i].Lat, loc[i].Lon);
+	            }
+	            
+	        //Tạo bảng
+	        $('#matrix').append('<table/>');
+	        for (var i = 0; i < arrOrgin.length; i++) {
+	            $('#matrix table').append('<tr/>');
+	            for (var j = 0; j < arrDest.length; j++) {
+	                $('#matrix table tr:last').append('<td/>');
+	            }
+	        }
+//	        var matrix = new Array();
+//	        $('#matrix tr').each(function(i) {
+//	            $(this).children().each(function(j) {
+//	                matrix[i * arrDest.length + j] = Math.round(Math.abs((i - j) * 1000) * Math.random())
+//	                $(this).append(matrix[i * arrDest.length + j]);
+//	            });
+//	        });
+
+	        var matrix = new Array();
+	        disMatSrv.getDistanceMatrix
+            (
+                {
+                    origins: arrOrgin,
+                    destinations: arrDest,
+                    travelMode: google.maps.TravelMode.DRIVING,
+                    unitSystem: google.maps.UnitSystem.METRIC,
+                    avoidFerries: true
+                },
+                function(response, status) {
+                    if (status === "OK") {
+                        var rows = response.rows;
+                        $('#matrix tr').each(function(i) {
+                            $(this).children().each(function(j) {
+                                matrix[i * arrDest.length + j] = rows[i].elements[j].distance.value;
+                                $(this).append(matrix[i * arrDest.length + j]);
+                            });
+                        });
+                    }
+                    else {
+                        alert(status);
+                    }
+                }
+            );
+	        $("button").click(function() {
+	            $.ajax({
+	                type: "POST",
+	                url: "problem.php",
+	                data: { dist: matrix },
+	                success: function(string) {
+	                    $("button").fadeOut('slow');
+	                    if (string == "") {
+	                        alert("Calculation Error");
+	                    }
+	                    else {
+	                        var array = string.split(' ');
+	                        var locID = new Array();
+	                        var typeName = new Array();
+	                        var index = 0, jndex = 0, num = 1;
+	                        for (var i = 0; i < array.length; i++) {
+	                            var key;
+	                            for (var j = 0; j < srv.length; j++) {
+	                                if (array[i] == j) {
+	                                    key = srv[j].ID;
+	                                    break;
+	                                }
+	                            }
+	                            locID[i] = $(srv).filter(function() { return this.ID == key; })[0].Location;
+	                            typeType = $(loc).filter(function() { return this.ID == locID[i]; })[0].Type;
+	                            typeName[i] = $(type).filter(function() { return this.ID == typeType; })[0].Name;
+	                            if (i > 0 && typeName[i] == "Depot" && typeName[i - 1] == "Depot") {
+	                                num++;
+	                            }
+
+	                        }
+	                        route = new Array(num);
+	                        for (var i = 0; i < num; i++) {
+	                            route[i] = new Array();
+	                        }
+	                        for (var i = 0; i < array.length; i++) {
+	                            if (i > 0 && typeName[i] == "Depot" && typeName[i - 1] == "Depot") {
+	                                jndex = 0;
+	                                index++;
+	                            }
+	                            route[index][jndex] = locID[i];
+	                            jndex++;
+	                        }
+	                        for (var i = 0; i < route.length; i++) {
+	                            $("#calc").append("<button id=r" + i + "> Route " + i + "</button>");
+	                            $("#r" + i).click(function() {
+	                                var id = $(this).attr("id");
+	                                var i = parseInt(id.substring(1));
+	                                var lon, lat, start, end;
+	                                for (var j = 0; j < route[i].length - 1; j++) {
+	                                    lat = $(loc).filter(function() { return this.ID == route[i][j]; })[0].Lat;
+	                                    lon = $(loc).filter(function() { return this.ID == route[i][j]; })[0].Lon;
+	                                    start = new google.maps.LatLng(lat, lon);
+	                                    lat = $(loc).filter(function() { return this.ID == route[i][j + 1]; })[0].Lat;
+	                                    lon = $(loc).filter(function() { return this.ID == route[i][j + 1]; })[0].Lon;
+	                                    end = new google.maps.LatLng(lat, lon);
+	                                    showPath(start, end, map);
+	                                }
+	                            });
+	                        }
+	                    }
+	                }
+	            });
+	        });
+            
+	    }
+
+	    google.maps.event.addDomListener(window, 'load', initialize);
+
+
+	    function showPath(start, end, map, color) {
+	        var directionsDisplay = new google.maps.DirectionsRenderer(
+	            {
+	                polylineOptions: 
+	                {
+	                    strokeColor: "red"
+	                }
+	            }
+	        );
+	        var directionsService = new google.maps.DirectionsService();
+	        directionsDisplay.setMap(map);
+	        var request =
+                {
+                    origin: start,
+                    destination: end,
+                    travelMode: google.maps.DirectionsTravelMode.DRIVING
+                };
+	        directionsService.route
+                (
+                    request,
+                    function(response, status) {
+                        setTimeout(function() {
+                            if (status == google.maps.DirectionsStatus.OK) {
+                                directionsDisplay.setDirections(response);
+                            }
+                            else {
+                                delay++;
+                            }
+                        }, delay);
+                    }
+                );
+	    }
+	      
+        </script>
+    </head>
+	<body>
+	    <div id="map" style="width: 100%; height: 675px;"></div>
+	    <div id="matrix" style="float: left;"><h1>Distance Matrix:</h1></div> 
+	    <div id="calc" style="float: left;padding-left:10px;">
+	        <h1>Calculus:</h1>
+            <button>Calculus</button>
+	    </div>  
+	</body>
+</html>
